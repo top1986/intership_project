@@ -6,6 +6,7 @@ from sklearn.preprocessing import Imputer,StandardScaler
 from sklearn.model_selection import train_test_split
 from data.utils import FeatureEngineering,DataFrameSelector 
 from spec_files.categorical_encoder import CategoricalEncoder
+from imblearn.over_sampling import SMOTE
 
 
 class HandlingData:  
@@ -29,9 +30,8 @@ class HandlingData:
         
         #A numerical pipeline for transfoming the numerical features
         num_pipeline = Pipeline([
-            ('feature_engineering', FeatureEngineering()),# FeatureEngineering allows the creation the new features. 
-                                                          # It exists in the module utils 
-            ('selector', DataFrameSelector(num_attrs)), # DataFrameSelector allows the selection of attributes. it exists in the module utils 
+            ('feature_engineering', FeatureEngineering()),
+            ('selector', DataFrameSelector(num_attrs)),
             ('imputer', Imputer(strategy="mean")),
             ('std_scaler', StandardScaler()),
         ])
@@ -40,7 +40,7 @@ class HandlingData:
         #Categorical pipeline for transforming textual features
         cat_pipeline = Pipeline([
             ('selector', DataFrameSelector(cat_attrs)),
-            ('cat_encoder', CategoricalEncoder(encoding="onehot-dense")),# CategoricalEncoder exists 
+            ('cat_encoder', CategoricalEncoder(encoding="onehot-dense")),
         ])
         
         #Union both pipelines
@@ -53,9 +53,9 @@ class HandlingData:
     def get_data(self):
         """
             Get the data prepared for ML
-        """
+        """        
         #Extraction the data in cvs format
-        data = pd.read_csv("data/" + self.nom_du_fichier,sep=';',decimal=',')
+        data = pd.read_csv('Data/ortho.csv',sep=';',decimal=',')
         
         #Features predictors and labels
         X = data.drop(self.target, axis=1)
@@ -66,7 +66,12 @@ class HandlingData:
         self.y_data = y
         
         #Splitting data
-        self.X_train_prepared, self.X_test_prepared, self.y_train, self.y_test = train_test_split(self.X_prepared,y,test_size=0.2, random_state=42)
+        self.X_train_prepared, self.X_test_prepared, self.y_train, self.y_test = train_test_split(self.X_prepared,
+                                                                                                  y,test_size=0.2, 
+                                                                                                  random_state=42)
+        sm = SMOTE(random_state=42)
+        self.X_train_resampled,self.y_train_resampled = sm.fit_sample(self.X_train_prepared,self.y_train)
+        self.X_test_resampled,self.y_test_resampled = sm.fit_sample(self.X_test_prepared,self.y_test)
     
     def main(self):
         self.get_data()

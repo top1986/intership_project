@@ -1,123 +1,103 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split, cross_val_score, KFold, cross_val_predict
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import Imputer,StandardScaler
-from sklearn.linear_model import LogisticRegression, SGDClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+
+from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.svm import SVC
-from sklearn.metrics import (accuracy_score,confusion_matrix,classification_report,
-                             f1_score,precision_score,recall_score,precision_recall_curve,
-                             roc_auc_score,)
+from sklearn.ensemble import (RandomForestClassifier, VotingClassifier, 
+                              GradientBoostingClassifier,AdaBoostClassifier)
+from mlxtend.classifier import StackingClassifier
 
-class TrainingModel:
-    def __init__(self, X_data, X_train, X_test, y_data ,y_train, y_test):
+from sklearn.metrics import (f1_score,precision_score,recall_score, classification_report,
+                             precision_recall_curve,roc_auc_score,accuracy_score)
+
+
+
+
+class BuildingModel:
+    """
         
-        self.X_data, self.X_train, self.X_test = X_data, X_train, X_test, 
-        self.y_data, self.y_train, self.y_test = y_data,  y_train, y_test
+    """
+    def __init__(self, X_train, X_test, y_train, y_test):
         
-        kfold = KFold(n_splits=5, random_state=42)
-        self.cv = kfold
+        self.X_train, self.X_test = X_train, X_test, 
+        self.y_train, self.y_test =  y_train, y_test
         
     def models_to_train(self):
+        """
+            Appends the differents type of models to train and returns a list of the tuples with name and an 
+            instance of each model
+        """
         models=[]
-        models.append(('SGDClassifier', SGDClassifier(loss="modified_huber")))
-        models.append(('RandomForestClassifier', RandomForestClassifier()))
-        models.append(('LogisticRegression', LogisticRegression()))
-        models.append(('LinearDiscriminantAnalysis', LinearDiscriminantAnalysis()))
-        models.append(('KNeighborsClassifier', KNeighborsClassifier(n_neighbors=5)))
-        models.append(('DecisionTreeClassifier', DecisionTreeClassifier()))
-        models.append(('GaussianNB', GaussianNB()))
-        models.append(('SVC', SVC(kernel='linear', probability=True, class_weight='balanced')))
+        models.append(('GradientBoostingClassifier', 
+                       GradientBoostingClassifier(n_estimators=500, learning_rate=1,
+                                                  max_depth=1, random_state=0)))#gradient boosting with differents
+                                                                                #hyperparameters for fine-tune the
+                                                                                #model
+        models.append(('AdaBoostClassifier', 
+                       AdaBoostClassifier(DecisionTreeClassifier(max_depth=1), n_estimators=500,
+                                          algorithm="SAMME.R", learning_rate=1)))#Applying an adaptive boosting
+                                                                                   #classifier on an tree classifier
+                                                                                   #wich badly ovefits the data
+
+        
+        models.append(('StackingClassifier',
+                      StackingClassifier(classifiers = [LogisticRegression(),
+                                                       KNeighborsClassifier(),
+                                                       RandomForestClassifier(),],
+                                        meta_classifier = LogisticRegression(), use_probas=True)
+                      ))
         
         return models
-        
-    def non_probabilistic_evaluating_scores(self):
+         
+    
+    def train_and_eval_models(self):
         """
-            This function is a simple evaluation of each model.
-            Also Evaluation is done with and without cross validation.
+            Training, evaluating and displaying the models
+        """
+        
+        results = ""
+        
+        for name,model in self.models_to_train(): 
+        
+            results += name + ": \n"
+            model.fit(self.X_train, self.y_train)
             
-        """
-        results = {}
-        
-        for (name,model) in self.models_to_train():
-            model.fit(self.X_train,self.y_train)
             y_pred = model.predict(self.X_test)
+            y_prob = model.predict_proba(self.X_test)
             
-            y_pred_cv = cross_val_predict(model,self.X_data, self.y_data,cv=self.cv)
+            results += "\t \t roc_auc_score: {} \n".format(roc_auc_score(self.y_test, y_prob[:,1]))
+            results +="\t \t precision_score: {} \n".format(precision_score(self.y_test,y_pred))
+            results +="\t \t recall_score : {} \n".format(recall_score(self.y_test,y_pred)) 
+            results +="\t \t accuracy_score : {} \n".format(accuracy_score(self.y_test,y_pred))
+            results +="\t \t score_model_on_train: {} \n".format(model.score(self.X_train, self.y_train))
+            results +="\t \t score_model_on_testset : {} \n".format(model.score(self.X_test,self.y_test))
+            results +="\t \t classification_report : {} \n".format(classification_report(self.y_test,y_pred))
             
-            scores = cross_val_score(model, self.X_data, self.y_data, cv=self.cv, scoring="accuracy").mean()
-            
-            results[name] = [accuracy_score(self.y_test, y_pred),
-                            accuracy_score(self.y_data,y_pred_cv),
-                            scores,]
-
-        df = pd.DataFrame(results, index=['accuracy_score_without_cv',
-                                          'accuracy_score_cv_predict',
-                                          'cross_val_score_with_accuracy'])
-        return df    
-    
-    def probabilistic_evaluating_scores(self):
+        print (results)
+               
+   
+    def select_best_model(self):
         """
-            function that makes a probabilistic evaluation of each model.
-            Evaluation is done with and without cross validation
+            returns the best model basing on accuracy score. 
         """
-        results = {}
+        scores = []
+        models = []
         
-        for (name,model) in self.models_to_train():
-            model.fit(self.X_train,self.y_train)
-            y_pred_prob = model.predict_proba(self.X_test)
-            
-            y_pred_prob_cv = cross_val_predict(model,self.X_data, self.y_data, cv=self.cv,method="predict_proba")
-            
-            scores_prob = cross_val_score(model, self.X_data, self.y_data, cv=self.cv, scoring="roc_auc").mean()
-                
-            results[name] = [roc_auc_score(self.y_test, y_pred_prob[:,1]),
-                             roc_auc_score(self.y_data, y_pred_prob_cv[:,1]),
-                            scores_prob,]
-            
-        return pd.DataFrame(results, index=['roc_auc_score_without_cv',
-                                            'roc_auc_score_cv_predict',
-                                            'cross_val_score_with_roc_auc'])
-    
-    def perfomance_measures(self,):
-        results = {}
-        
-        for (name,model) in self.models_to_train():
+        for name,model in self.models_to_train(): 
             
             model.fit(self.X_train, self.y_train)
             y_pred = model.predict(self.X_test)
+            score = accuracy_score(self.y_test, y_pred)
             
-            y_pred_cv = cross_val_predict(model,self.X_data, self.y_data, cv=self.cv,)
-                
-            results[name] = [confusion_matrix(self.y_test, y_pred),
-                             precision_score(self.y_test,y_pred),
-                             recall_score(self.y_test,y_pred),
-                             f1_score(self.y_test,y_pred),
-                             confusion_matrix(self.y_data, y_pred_cv),
-                             precision_score(self.y_data,y_pred_cv),
-                             recall_score(self.y_data,y_pred_cv),
-                             f1_score(self.y_data,y_pred_cv),]
-            
-        df = pd.DataFrame(results, index=['confusion_matrix', 'precision_score', 
-                                          'recall_score', 'f1_score',
-                                          'confusion_matrix_cv', 'precision_score_cv', 
-                                          'recall_score_cv', 'f1_score_cv',])
+            models.append(model)
+            scores.append(score)
+
+        best_ind = scores.index(max(scores))
         
-        return df
-         
-    
-    def train_model(self, X, y):
-        self.return_home = (y==1)
-        self.do_not_return_home = (y==0)
-               
-   
-    def select_best_model(self,X,y):
-        pass
+        return models[best_ind], scores[best_ind]
+        
+        
     
     def plot_precision_recall_vs_threshold(self,precisions,recalls,thresholds): 
         plt.plot(thresholds, precisions[:-1], "b--", label="Precision") 
