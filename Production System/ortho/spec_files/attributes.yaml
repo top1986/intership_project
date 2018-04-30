@@ -1,0 +1,47 @@
+attributes:
+      - BMI
+      - AGE_AT_ADMIT
+      - RawDx
+      - Dx1
+      - Dx2
+      - PreOpHgb
+      - PreOpCr
+      - PreOpALC
+      - PreOpGlucose
+      - Dx3
+      - PreOpNarcotic
+      - PreOpDMMeds
+      - PreOpInsulin
+      - PreOpBloodThinner
+      - Side
+      - Gender
+      - arrhythmias
+      - valvular
+      - pulm circ
+      - PVD
+      - HTNw/oCx
+      - HTNw/Cx
+      - Paralysis
+      - other neuro
+      - chronic pulm
+      - DMw/oCx
+      - DMw/Cx
+      - hypothyroid
+      - renal failure
+      - liver failure
+      - PUD
+      - AIDS
+      - L0oma
+      - Mets
+      - solidCaw/oMets
+      - RA/CVD
+      - coagulopathy
+      - obesity
+      - weightLoss
+      - fluidElectrolyte
+      - bloodLossAnemia
+      - DeficiencyAnemia
+      - EtOH
+      - Drugs
+      - Psychosis
+      - Depression

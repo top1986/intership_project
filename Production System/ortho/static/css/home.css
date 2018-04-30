@@ -1,0 +1,36 @@
+input[type=text], select, input[type=number]{
+    width: 100%;
+    padding: 10px 10px;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+    font-size: 1em;
+    border: 2px solid #3CBC8D;
+    border-radius: 4px;
+}
+
+input[type=submit]{
+  background-color: #3CBC8D;
+  border-radius: 4px;
+  padding: 20px;
+  font-size: 1.2em;
+  color: black;
+}
+
+label{
+  padding: 10px 10px;
+  margin-bottom: 20px;
+  font-size: 1.2em;
+}
+
+
+form aside{
+  display: inline-block;
+  vertical-align: top;
+  width: 45%;
+}
+
+form aside fieldset{
+  box-sizing: border-box;  
+  border: 2px solid #3CBC8D;
+  border-radius: 4px;
+}

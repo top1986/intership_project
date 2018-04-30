@@ -1,44 +1,51 @@
-<html>
-  <head>
-      <title>D3 Tutorial </title>
-      <script src="https://d3js.org/d3.v5.min.js"></script>
-  </head>
+{% extends 'layouts/base.html' %}
 
-  <body>
+{% load static %}
 
+{% block title %}  Home  {% endblock %}
+{% block css %} <link rel="stylesheet" href="{% static 'css/home.css' %} ">  {% endblock %}
 
-    <script >
+<!-- {% block script %}
+  /javascript/home.js
+{% endblock %} -->
 
-    //Shapes SVG
-    var canvas = d3.select("body")
-                    .append("svg")
-                    .attr("width", 500)
-                    .attr("height", 1000)
-                    .style("border", "2px solid red");
-    var circle = canvas
-                       .append("circle")
-                       .attr("cx", 250)
-                       .attr("cy", 250)
-                       .attr("r", 50)
-                       .attr("fill", "red");
+{% block content %}
 
-    var rect = canvas
-                  .append("rect")
-                  .attr("width", 100)
-                  .attr("height", 50);
+  <p>Make your predictions using this form </p>
 
-    var line = canvas
-                .append("line")
-                .attr("x1", 0)
-                .attr("y1", 100)
-                .attr("x2", 400)
-                .attr("y2", 400)
-                .attr("stroke", "green")
-                .attr("stroke-width", 5)
+  <form method="post" >
+    {% csrf_token %}
 
+    {% for field in form %}
 
+      {% if forloop.first %}
+        <aside> 
+      {% endif %}
 
-    </script>
-  </body>
+      {{ field.label_tag }}
+      {{ field }}
 
-</html
+      {% if forloop.counter0 == 20 %}
+        </aside>
+        <aside>
+      {% endif %}
+
+      {% if forloop.last %}
+        </aside>
+      {% endif %}
+
+    {% endfor %}
+
+    <br>
+
+    <input type="submit" name="predict" value="Predict"> 
+
+  </form>
+
+{% endblock %}
+
+{% block javascripts%}
+  <script type="text/javascript" src="{% static '/javascript/home.js'%}">
+
+  </script>
+{% endblock %}

@@ -1,4 +1,42 @@
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.pipeline import Pipeline,FeatureUnion
+from sklearn.preprocessing import Imputer,StandardScaler
+from utils.categorical_encoder import CategoricalEncoder
+
+
+def prepare_data(data):
+        """
+            Prepares the data for Machine Learning algorithm.
+            First, we make the Feature Engineering, and then the selection of revelant features for solving
+            the machine learning problem. And then, the mean of the data, finally the feature scaling.
+        """
+        num_attrs = ['BMI','AGE_AT_ADMIT','Gender','Female','PreOpNarcotic','PreOpInsulin',
+                              'PreOpDMMeds','PreOpBloodThinner','degre_dx','med_cond',]
+        cat_attrs = ['RawDx', 'Side']
+
+        #A numerical pipeline for transfoming the numerical features
+        num_pipeline = Pipeline([
+            ('feature_engineering', PreProcessing()),
+            ('selector', DataFrameSelector(num_attrs)),
+            ('imputer', Imputer(strategy="mean")),
+            ('std_scaler', StandardScaler()),
+        ])
+
+
+        #Categorical pipeline for transforming textual features
+        cat_pipeline = Pipeline([
+            ('selector', DataFrameSelector(cat_attrs)),
+            ('cat_encoder', CategoricalEncoder(encoding="onehot-dense")),
+        ])
+
+        #Union both pipelines
+        full_pipeline = FeatureUnion(transformer_list=[
+            ("num_pipeline", num_pipeline),
+            ("cat_pipeline", cat_pipeline),
+        ])
+        return full_pipeline.fit_transform(data)
+
+
 
 class PreProcessing(BaseEstimator, TransformerMixin):
     """
